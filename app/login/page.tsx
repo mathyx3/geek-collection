@@ -1,36 +1,38 @@
-"use client"
+"use client";
 
-import { createClient } from "@/lib/supabase/client"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
-  const supabase = createClient()
+  const router = useRouter();
 
-  const loginWithGoogle = async () => {
+  // Se já estiver logado, manda direto pro dashboard
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.push("/dashboard");
+      }
+    });
+  }, [router]);
+
+  async function loginWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${location.origin}/login`,
       },
-    })
+    });
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-        gap: 20,
-      }}
-    >
-      <h1 style={{ fontSize: 32 }}>Login</h1>
+    <div style={{ padding: 40 }}>
+      <h1>Login</h1>
 
       <button
         onClick={loginWithGoogle}
         style={{
-          padding: "12px 20px",
+          padding: 12,
           fontSize: 16,
           cursor: "pointer",
         }}
@@ -38,5 +40,5 @@ export default function LoginPage() {
         Entrar com Google
       </button>
     </div>
-  )
+  );
 }
