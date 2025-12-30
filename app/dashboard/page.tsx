@@ -4,10 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const router = useRouter()
+  const [email, setEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -20,7 +20,7 @@ export default function Dashboard() {
         return
       }
 
-      setUserEmail(session.user.email ?? null)
+      setEmail(session.user.email ?? null)
       setLoading(false)
     }
 
@@ -29,99 +29,57 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.replace("/login")
+    router.replace("/")
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-purple-400">
-        Carregando dashboard...
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Carregando...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-purple-950 text-white flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-black/60 border-r border-purple-800 p-6">
-        <h1 className="text-2xl font-bold text-purple-400 mb-8">
-          Geek Collection
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-950 to-black text-white p-6">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-purple-400">Dashboard</h1>
+        <button
+          onClick={handleLogout}
+          className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded"
+        >
+          Sair
+        </button>
+      </div>
 
-        <nav className="flex flex-col gap-4">
-          <button
-            onClick={() => router.push("/perfil")}
-            className="text-left px-4 py-2 rounded-lg hover:bg-purple-900 transition"
-          >
-            👤 Perfil
-          </button>
+      <p className="mb-6 text-gray-300">
+        Logado como <span className="text-purple-300">{email}</span>
+      </p>
 
-          {/* Futuro */}
-          <button
-            disabled
-            className="text-left px-4 py-2 rounded-lg opacity-40 cursor-not-allowed"
-          >
-            🎯 Missões
-          </button>
-
-          <button
-            disabled
-            className="text-left px-4 py-2 rounded-lg opacity-40 cursor-not-allowed"
-          >
-            🖼️ Coleção
-          </button>
-        </nav>
-      </aside>
-
-      {/* Conteúdo principal */}
-      <main className="flex-1 p-10">
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h2 className="text-3xl font-bold text-purple-300">
-              Dashboard
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Logado como {userEmail}
-            </p>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-600 transition"
-          >
-            Sair
-          </button>
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="border border-purple-700 rounded-xl p-4 bg-black/40">
+          <h2 className="text-xl font-semibold text-purple-400">
+            Colecionáveis
+          </h2>
+          <p className="text-gray-400 mt-2">
+            Em breve você verá seus itens digitais aqui.
+          </p>
         </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-black/50 border border-purple-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-purple-300">
-              Colecionáveis
-            </h3>
-            <p className="text-zinc-400 mt-2">
-              Em breve você poderá visualizar seus itens digitais aqui.
-            </p>
-          </div>
+        <div className="border border-purple-700 rounded-xl p-4 bg-black/40">
+          <h2 className="text-xl font-semibold text-purple-400">Missões</h2>
+          <p className="text-gray-400 mt-2">
+            Complete missões para ganhar pontos.
+          </p>
+        </div>
 
-          <div className="bg-black/50 border border-purple-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-purple-300">
-              Missões
-            </h3>
-            <p className="text-zinc-400 mt-2">
-              Complete missões para ganhar pontos e recompensas.
-            </p>
-          </div>
-
-          <div className="bg-black/50 border border-purple-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-purple-300">
-              Perfil
-            </h3>
-            <p className="text-zinc-400 mt-2">
-              Personalize seu perfil geek.
-            </p>
-          </div>
-        </section>
-      </main>
+        <div className="border border-purple-700 rounded-xl p-4 bg-black/40">
+          <h2 className="text-xl font-semibold text-purple-400">Perfil</h2>
+          <p className="text-gray-400 mt-2">
+            Personalize seu perfil geek.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
