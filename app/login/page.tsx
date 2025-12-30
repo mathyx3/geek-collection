@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 export default function LoginPage() {
   const router = useRouter();
 
-  // Se já estiver logado, redireciona
+  // Se já estiver logado, manda direto pro dashboard
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
@@ -16,36 +16,19 @@ export default function LoginPage() {
     });
   }, [router]);
 
-  async function loginWithGoogle() {
+  const loginWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
       },
     });
-  }
+  };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-        gap: 16,
-      }}
-    >
-      <h1>Geek Collection</h1>
-
-      <button
-        onClick={loginWithGoogle}
-        style={{
-          padding: "12px 20px",
-          fontSize: 16,
-          cursor: "pointer",
-        }}
-      >
+    <div style={{ padding: 40 }}>
+      <h1>Login</h1>
+      <button onClick={loginWithGoogle}>
         Entrar com Google
       </button>
     </div>
