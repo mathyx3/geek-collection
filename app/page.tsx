@@ -1,16 +1,35 @@
+"use client"
+
+import { useRouter } from "next/navigation"
+
 export default function Home() {
+  const router = useRouter()
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-6">
-      <h1 className="text-4xl font-bold text-purple-400">
-        Geek Collection
-      </h1>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 20,
+      }}
+    >
+      <h1 style={{ fontSize: 40 }}>Geek Collection</h1>
 
-      <p className="text-gray-300">
-        Sua coleção geek em um só lugar
-      </p>
+      <button
+        onClick={() => router.push("/signup")}
+        style={{ padding: "12px 24px", fontSize: 16 }}
+      >
+        Sign Up
+      </button>
 
-      <button className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 transition">
-        Entrar com Google
+      <button
+        onClick={() => router.push("/login")}
+        style={{ padding: "12px 24px", fontSize: 16 }}
+      >
+        Login
       </button>
     </main>
   )
