@@ -1,79 +1,58 @@
 "use client"
 
-import { useState } from "react"
+import { ReactNode, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase/client"
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const router = useRouter()
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push("/")
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900 to-black text-white">
-      
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-purple-700">
-        <button
-          onClick={() => setOpen(true)}
-          className="text-2xl"
-        >
-          ☰
-        </button>
-
-        <h1 className="text-lg font-bold text-purple-400">
-          Geek Collection
-        </h1>
-
-        <button
-          onClick={handleLogout}
-          className="bg-purple-600 px-3 py-1 rounded-md"
-        >
-          Sair
-        </button>
-      </header>
-
-      {/* Sidebar */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/60 z-40"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
+    <div className="min-h-screen bg-[#0b0b0f] text-white flex">
+      {/* MENU LATERAL */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-black border-r border-purple-700 p-5
-        transform transition-transform duration-300
+        className={`fixed top-0 left-0 h-full w-64 bg-[#12001c] border-r border-purple-800 p-6 z-40
+        transition-transform duration-300
         ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <h2 className="text-xl font-bold mb-6 text-purple-400">
-          Menu
+        <h2 className="text-2xl font-bold text-purple-400 mb-8">
+          Geek Collection
         </h2>
 
         <nav className="flex flex-col gap-4">
-          <Link href="/dashboard/profile" onClick={() => setOpen(false)}>
-            👤 Perfil
+          <Link href="/dashboard" className="hover:text-purple-400">
+            🏠 Dashboard
           </Link>
-          <Link href="/dashboard/missions" onClick={() => setOpen(false)}>
+
+          <Link href="/missions" className="hover:text-purple-400">
             🎯 Missões
           </Link>
-          <Link href="/dashboard/collection" onClick={() => setOpen(false)}>
+
+          <Link href="/profile" className="hover:text-purple-400">
+            👤 Perfil
+          </Link>
+
+          <Link href="/collection" className="hover:text-purple-400">
             🧩 Coleção
           </Link>
         </nav>
       </aside>
 
-      {/* Conteúdo */}
-      <main className="p-6">{children}</main>
+      {/* CONTEÚDO */}
+      <div className="flex-1 ml-0">
+        {/* HEADER */}
+        <header className="flex items-center gap-4 p-4 border-b border-purple-800">
+          <button
+            onClick={() => setOpen(!open)}
+            className="text-2xl text-purple-400"
+          >
+            ☰
+          </button>
+
+          <h1 className="text-xl font-semibold">Dashboard</h1>
+        </header>
+
+        <main className="p-6">{children}</main>
+      </div>
     </div>
   )
 }
