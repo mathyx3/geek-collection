@@ -12,49 +12,86 @@ type Mission = {
 
 export default function MissionsPage() {
   const [missions, setMissions] = useState<Mission[]>([])
-  const [userId, setUserId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadData = async () => {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) return
-      setUserId(auth.user.id)
-
-      const { data } = await supabase
-        .from("missions")
-        .select("*")
-        .eq("active", true)
-
-      setMissions(data || [])
-    }
-
-    loadData()
+    loadMissions()
   }, [])
 
-  const startMission = async (missionId: string) => {
-    if (!userId) return
+  async function loadMissions() {
+    setLoading(true)
 
-    await supabase.from("user_missions").insert({
-      user_id: userId,
-      mission_id: missionId,
-      status: "active"
-    })
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
 
-    alert("Missão iniciada!")
+    if (!user) return
+
+    // Buscar missões NÃO concluídas
+    const { data, error } = await supabase
+      .from("missions")
+      .select(`
+        id,
+        title,
+        description,
+        reward_points
+      `)
+      .eq("active", true)
+      .not(
+        "id",
+        "in",
+        `(select mission_id from user_missions where user_id = '${user.id}')`
+      )
+
+    if (!error && data) {
+      setMissions(data)
+    }
+
+    setLoading(false)
   }
 
+  async function completeMission(missionId: string) {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    await supabase.from("user_missions").insert({
+      user_id: user.id,
+      mission_id: missionId
+    })
+
+    // Remove da tela sem reload
+    setMissions(prev => prev.filter(m => m.id !== missionId))
+  }
+
+  if (loading) return <p>Carregando missões...</p>
+
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 20 }}>
       <h1>Missões</h1>
 
+      {missions.length === 0 && (
+        <p>Nenhuma missão disponível 🎉</p>
+      )}
+
       {missions.map(mission => (
-        <div key={mission.id} style={{ border: "1px solid #444", marginBottom: 12, padding: 12 }}>
+        <div
+          key={mission.id}
+          style={{
+            border: "1px solid #444",
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 12
+          }}
+        >
           <h3>{mission.title}</h3>
           <p>{mission.description}</p>
           <p>Recompensa: {mission.reward_points} pontos</p>
 
-          <button onClick={() => startMission(mission.id)}>
-            Iniciar missão
+          <button onClick={() => completeMission(mission.id)}>
+            Concluir missão
           </button>
         </div>
       ))}
