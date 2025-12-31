@@ -6,89 +6,93 @@ import { supabase } from "@/lib/supabase/client";
 type Mission = {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   reward_points: number;
 };
 
 export default function MissionsPage() {
   const [missions, setMissions] = useState<Mission[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMissions = async () => {
-      const { data, error } = await supabase
+    const load = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+
+      setUserId(auth.user.id);
+
+      const { data } = await supabase
         .from("missions")
         .select("*")
-        .eq("active", true)
-        .order("created_at", { ascending: true });
+        .eq("active", true);
 
-      if (error) {
-        console.error("Erro ao buscar missões:", error);
-      } else {
-        setMissions(data || []);
-      }
-
-      setLoading(false);
+      setMissions(data || []);
     };
 
-    fetchMissions();
+    load();
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ padding: 24, color: "white" }}>
-        Carregando missões...
-      </div>
-    );
-  }
+  const completeMission = async (mission: Mission) => {
+    if (!userId) return;
+
+    // 1️⃣ registra missão
+    const { error: missionError } = await supabase
+      .from("user_missions")
+      .insert({
+        user_id: userId,
+        mission_id: mission.id,
+      });
+
+    if (missionError) {
+      alert("Missão já concluída ou erro.");
+      return;
+    }
+
+    // 2️⃣ soma pontos na wallet
+    const { data: wallet } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", userId)
+      .single();
+
+    if (!wallet) {
+      // cria wallet se não existir
+      await supabase.from("wallets").insert({
+        user_id: userId,
+        balance: mission.reward_points,
+      });
+    } else {
+      await supabase
+        .from("wallets")
+        .update({
+          balance: wallet.balance + mission.reward_points,
+        })
+        .eq("user_id", userId);
+    }
+
+    alert("Missão concluída! Pontos adicionados 💜");
+  };
 
   return (
-    <div
-      style={{
-        padding: 24,
-        color: "white",
-        maxWidth: 800,
-        margin: "0 auto",
-      }}
-    >
-      <h1 style={{ fontSize: 28, marginBottom: 16 }}>🎯 Missões</h1>
-
-      {missions.length === 0 && (
-        <p>Nenhuma missão disponível no momento.</p>
-      )}
+    <div style={{ padding: 30 }}>
+      <h1>Missões</h1>
 
       {missions.map((mission) => (
         <div
           key={mission.id}
           style={{
-            background: "#111",
-            border: "1px solid #6d28d9",
+            border: "1px solid #444",
+            padding: 15,
+            marginBottom: 15,
             borderRadius: 8,
-            padding: 16,
-            marginBottom: 12,
           }}
         >
-          <h2 style={{ fontSize: 20 }}>{mission.title}</h2>
-          <p style={{ opacity: 0.8 }}>{mission.description}</p>
-
-          <p style={{ marginTop: 8, color: "#a78bfa" }}>
-            ⭐ Recompensa: {mission.reward_points} pontos
-          </p>
-
-          <button
-            disabled
-            style={{
-              marginTop: 12,
-              padding: "8px 16px",
-              background: "#6d28d9",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: "not-allowed",
-              opacity: 0.7,
-            }}
-          >
-            Concluir missão (em breve)
+          <h3>{mission.title}</h3>
+          <p>{mission.description}</p>
+          <strong>+{mission.reward_points} pontos</strong>
+          <br />
+          <button onClick={() => completeMission(mission)}>
+            Concluir missão
           </button>
         </div>
       ))}
