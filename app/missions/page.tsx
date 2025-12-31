@@ -1,100 +1,97 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 type Mission = {
-  id: string
-  title: string
-  description: string
-  reward_points: number
-}
+  id: string;
+  title: string;
+  description: string | null;
+  reward_points: number;
+};
 
 export default function MissionsPage() {
-  const [missions, setMissions] = useState<Mission[]>([])
-  const [loading, setLoading] = useState(true)
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadMissions()
-  }, [])
+    const fetchMissions = async () => {
+      const { data, error } = await supabase
+        .from("missions")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", { ascending: true });
 
-  async function loadMissions() {
-    setLoading(true)
+      if (error) {
+        console.error("Erro ao buscar missões:", error);
+      } else {
+        setMissions(data || []);
+      }
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
+      setLoading(false);
+    };
 
-    if (!user) return
+    fetchMissions();
+  }, []);
 
-    // Buscar missões NÃO concluídas
-    const { data, error } = await supabase
-      .from("missions")
-      .select(`
-        id,
-        title,
-        description,
-        reward_points
-      `)
-      .eq("active", true)
-      .not(
-        "id",
-        "in",
-        `(select mission_id from user_missions where user_id = '${user.id}')`
-      )
-
-    if (!error && data) {
-      setMissions(data)
-    }
-
-    setLoading(false)
+  if (loading) {
+    return (
+      <div style={{ padding: 24, color: "white" }}>
+        Carregando missões...
+      </div>
+    );
   }
-
-  async function completeMission(missionId: string) {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
-
-    if (!user) return
-
-    await supabase.from("user_missions").insert({
-      user_id: user.id,
-      mission_id: missionId
-    })
-
-    // Remove da tela sem reload
-    setMissions(prev => prev.filter(m => m.id !== missionId))
-  }
-
-  if (loading) return <p>Carregando missões...</p>
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Missões</h1>
+    <div
+      style={{
+        padding: 24,
+        color: "white",
+        maxWidth: 800,
+        margin: "0 auto",
+      }}
+    >
+      <h1 style={{ fontSize: 28, marginBottom: 16 }}>🎯 Missões</h1>
 
       {missions.length === 0 && (
-        <p>Nenhuma missão disponível 🎉</p>
+        <p>Nenhuma missão disponível no momento.</p>
       )}
 
-      {missions.map(mission => (
+      {missions.map((mission) => (
         <div
           key={mission.id}
           style={{
-            border: "1px solid #444",
+            background: "#111",
+            border: "1px solid #6d28d9",
             borderRadius: 8,
             padding: 16,
-            marginBottom: 12
+            marginBottom: 12,
           }}
         >
-          <h3>{mission.title}</h3>
-          <p>{mission.description}</p>
-          <p>Recompensa: {mission.reward_points} pontos</p>
+          <h2 style={{ fontSize: 20 }}>{mission.title}</h2>
+          <p style={{ opacity: 0.8 }}>{mission.description}</p>
 
-          <button onClick={() => completeMission(mission.id)}>
-            Concluir missão
+          <p style={{ marginTop: 8, color: "#a78bfa" }}>
+            ⭐ Recompensa: {mission.reward_points} pontos
+          </p>
+
+          <button
+            disabled
+            style={{
+              marginTop: 12,
+              padding: "8px 16px",
+              background: "#6d28d9",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              cursor: "not-allowed",
+              opacity: 0.7,
+            }}
+          >
+            Concluir missão (em breve)
           </button>
         </div>
       ))}
     </div>
-  )
+  );
 }
