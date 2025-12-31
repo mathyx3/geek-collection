@@ -19,97 +19,103 @@ export default function MissionsPage() {
   }, [])
 
   async function fetchMissions() {
-    setLoading(true)
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      setLoading(false)
-      return
-    }
-
-    // Pega missões que o usuário AINDA NÃO concluiu
     const { data, error } = await supabase
       .from('missions')
       .select('*')
       .eq('active', true)
-      .not(
-        'id',
-        'in',
-        `(
-          select mission_id
-          from user_missions
-          where user_id = '${user.id}'
-        )`
-      )
 
-    if (!error && data) {
-      setMissions(data)
+    if (error) {
+      console.error('Erro ao buscar missões:', error)
+    } else {
+      setMissions(data || [])
     }
 
     setLoading(false)
   }
 
-  async function completeMission(mission: Mission) {
+  async function completeMission(missionId: string, points: number) {
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) return
+    if (!user) {
+      alert('Usuário não autenticado')
+      return
+    }
 
-    // Registra missão concluída
-    const { error } = await supabase.from('user_missions').insert({
-      user_id: user.id,
-      mission_id: mission.id,
-      points_earned: mission.reward_points,
-    })
+    // evita missão duplicada
+    const { data: existing } = await supabase
+      .from('user_missions')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('mission_id', missionId)
+      .single()
 
-    if (error) {
+    if (existing) {
       alert('Missão já concluída ou erro.')
       return
     }
 
-    // Soma pontos no perfil
-    await supabase.rpc('add_points', {
-      uid: user.id,
-      points: mission.reward_points,
+    // registra missão
+    const { error: insertError } = await supabase
+      .from('user_missions')
+      .insert({
+        user_id: user.id,
+        mission_id: missionId,
+      })
+
+    if (insertError) {
+      console.error(insertError)
+      alert('Erro ao concluir missão')
+      return
+    }
+
+    // adiciona pontos no perfil
+    const { error: pointsError } = await supabase.rpc('add_points', {
+      user_id_input: user.id,
+      points_input: points,
     })
 
-    alert('Pontos adicionados!')
-    fetchMissions()
+    if (pointsError) {
+      console.error(pointsError)
+      alert('Erro ao adicionar pontos')
+      return
+    }
+
+    alert('Missão concluída! Pontos adicionados.')
   }
 
   if (loading) {
-    return <p style={{ padding: 20 }}>Carregando missões...</p>
+    return <p>Carregando missões...</p>
   }
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 24 }}>
       <h1>Missões</h1>
 
-      {missions.length === 0 && (
-        <p>Nenhuma missão disponível.</p>
-      )}
+      {missions.length === 0 && <p>Nenhuma missão disponível.</p>}
 
       {missions.map((mission) => (
         <div
           key={mission.id}
           style={{
-            marginBottom: 16,
-            padding: 16,
             border: '1px solid #333',
             borderRadius: 8,
+            padding: 16,
+            marginBottom: 16,
           }}
         >
           <h3>{mission.title}</h3>
           <p>{mission.description}</p>
           <strong>+{mission.reward_points} pontos</strong>
+
           <br />
+
           <button
-            onClick={() => completeMission(mission)}
             style={{ marginTop: 10 }}
+            onClick={() =>
+              completeMission(mission.id, mission.reward_points)
+            }
           >
             Concluir missão
           </button>
