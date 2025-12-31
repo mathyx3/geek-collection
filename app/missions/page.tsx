@@ -1,126 +1,76 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
-type Mission = {
-  id: string
-  title: string
-  description: string
-  reward_points: number
-}
-
-export default function MissionsPage() {
-  const [missions, setMissions] = useState<Mission[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchMissions()
-  }, [])
-
-  async function fetchMissions() {
-    const { data, error } = await supabase
-      .from('missions')
-      .select('*')
-      .eq('active', true)
-
-    if (error) {
-      console.error('Erro ao buscar missões:', error)
-    } else {
-      setMissions(data || [])
-    }
-
-    setLoading(false)
-  }
-
-  async function completeMission(missionId: string, points: number) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      alert('Usuário não autenticado')
-      return
-    }
-
-    // evita missão duplicada
-    const { data: existing } = await supabase
-      .from('user_missions')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('mission_id', missionId)
-      .single()
-
-    if (existing) {
-      alert('Missão já concluída ou erro.')
-      return
-    }
-
-    // registra missão
-    const { error: insertError } = await supabase
-      .from('user_missions')
-      .insert({
-        user_id: user.id,
-        mission_id: missionId,
-      })
-
-    if (insertError) {
-      console.error(insertError)
-      alert('Erro ao concluir missão')
-      return
-    }
-
-    // adiciona pontos no perfil
-    const { error: pointsError } = await supabase.rpc('add_points', {
-      user_id_input: user.id,
-      points_input: points,
-    })
-
-    if (pointsError) {
-      console.error(pointsError)
-      alert('Erro ao adicionar pontos')
-      return
-    }
-
-    alert('Missão concluída! Pontos adicionados.')
-  }
-
-  if (loading) {
-    return <p>Carregando missões...</p>
-  }
+export default function DashboardPage() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const router = useRouter()
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Missões</h1>
+    <div className="min-h-screen bg-black text-white flex">
+      
+      {/* MENU LATERAL */}
+      <div
+        className={`fixed top-0 left-0 h-full w-64 bg-zinc-900 p-6 transform transition-transform duration-300
+        ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <h2 className="text-xl font-bold mb-6 text-purple-400">
+          Geek Collection
+        </h2>
 
-      {missions.length === 0 && <p>Nenhuma missão disponível.</p>}
-
-      {missions.map((mission) => (
-        <div
-          key={mission.id}
-          style={{
-            border: '1px solid #333',
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 16,
-          }}
-        >
-          <h3>{mission.title}</h3>
-          <p>{mission.description}</p>
-          <strong>+{mission.reward_points} pontos</strong>
-
-          <br />
+        <nav className="flex flex-col gap-4">
+          <button
+            onClick={() => {
+              router.push("/dashboard")
+              setMenuOpen(false)
+            }}
+            className="text-left hover:text-purple-400"
+          >
+            Dashboard
+          </button>
 
           <button
-            style={{ marginTop: 10 }}
-            onClick={() =>
-              completeMission(mission.id, mission.reward_points)
-            }
+            onClick={() => {
+              router.push("/missions")
+              setMenuOpen(false)
+            }}
+            className="text-left hover:text-purple-400"
           >
-            Concluir missão
+            Missões
           </button>
-        </div>
-      ))}
+
+          <button
+            onClick={() => {
+              router.push("/profile")
+              setMenuOpen(false)
+            }}
+            className="text-left hover:text-purple-400"
+          >
+            Perfil
+          </button>
+        </nav>
+      </div>
+
+      {/* CONTEÚDO */}
+      <div className="flex-1 p-6">
+        {/* BOTÃO ☰ */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="text-3xl mb-6"
+        >
+          ☰
+        </button>
+
+        <h1 className="text-3xl font-bold mb-4">
+          Dashboard
+        </h1>
+
+        <p className="text-zinc-400">
+          Bem-vindo ao Geek Collection 🚀  
+          Escolha uma opção no menu.
+        </p>
+      </div>
     </div>
   )
 }
