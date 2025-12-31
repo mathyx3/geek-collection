@@ -1,76 +1,90 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
-export default function DashboardPage() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const router = useRouter()
+type Mission = {
+  id: string;
+  title: string;
+  description: string;
+  reward_points: number;
+};
+
+export default function MissionsPage() {
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadMissions = async () => {
+      const { data, error } = await supabase
+        .from("missions")
+        .select("*")
+        .eq("active", true);
+
+      if (!error && data) {
+        setMissions(data);
+      }
+
+      setLoading(false);
+    };
+
+    loadMissions();
+  }, []);
+
+  const completeMission = async (missionId: string, points: number) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return alert("Não logado");
+
+    // registra missão concluída
+    await supabase.from("user_missions").insert({
+      user_id: user.id,
+      mission_id: missionId,
+    });
+
+    // adiciona pontos
+    await supabase.rpc("add_points", {
+      uid: user.id,
+      amount: points,
+    });
+
+    alert("Missão concluída! Pontos adicionados.");
+  };
+
+  if (loading) return <p>Carregando missões...</p>;
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      
-      {/* MENU LATERAL */}
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-zinc-900 p-6 transform transition-transform duration-300
-        ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
-      >
-        <h2 className="text-xl font-bold mb-6 text-purple-400">
-          Geek Collection
-        </h2>
+    <main style={{ padding: 32 }}>
+      <h1>Missões</h1>
 
-        <nav className="flex flex-col gap-4">
-          <button
-            onClick={() => {
-              router.push("/dashboard")
-              setMenuOpen(false)
-            }}
-            className="text-left hover:text-purple-400"
-          >
-            Dashboard
-          </button>
+      {missions.length === 0 && <p>Nenhuma missão disponível.</p>}
 
-          <button
-            onClick={() => {
-              router.push("/missions")
-              setMenuOpen(false)
-            }}
-            className="text-left hover:text-purple-400"
-          >
-            Missões
-          </button>
-
-          <button
-            onClick={() => {
-              router.push("/profile")
-              setMenuOpen(false)
-            }}
-            className="text-left hover:text-purple-400"
-          >
-            Perfil
-          </button>
-        </nav>
-      </div>
-
-      {/* CONTEÚDO */}
-      <div className="flex-1 p-6">
-        {/* BOTÃO ☰ */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="text-3xl mb-6"
+      {missions.map((mission) => (
+        <div
+          key={mission.id}
+          style={{
+            background: "#111",
+            border: "1px solid #6d28d9",
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 16,
+          }}
         >
-          ☰
-        </button>
-
-        <h1 className="text-3xl font-bold mb-4">
-          Dashboard
-        </h1>
-
-        <p className="text-zinc-400">
-          Bem-vindo ao Geek Collection 🚀  
-          Escolha uma opção no menu.
-        </p>
-      </div>
-    </div>
-  )
+          <h3>{mission.title}</h3>
+          <p>{mission.description}</p>
+          <strong>{mission.reward_points} pontos</strong>
+          <br />
+          <button
+            onClick={() =>
+              completeMission(mission.id, mission.reward_points)
+            }
+          >
+            Concluir missão
+          </button>
+        </div>
+      ))}
+    </main>
+  );
 }
