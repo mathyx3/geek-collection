@@ -1,32 +1,30 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 
 export default function Home() {
-  const router = useRouter()
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.replace("/dashboard");
+      }
+    });
+  }, [router]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-black via-zinc-900 to-purple-900 text-white px-4">
-      <h1 className="text-4xl font-bold mb-2">Geek Collection</h1>
-      <p className="text-gray-300 mb-8 text-center">
-        Colecione, organize e mostre seu lado geek 🕹️
-      </p>
+    <main style={{ textAlign: "center", paddingTop: 100 }}>
+      <h1>Geek Collection</h1>
 
-      <div className="flex flex-col gap-4 w-full max-w-xs">
-        <button
-          onClick={() => router.push("/signup")}
-          className="bg-purple-600 hover:bg-purple-700 transition rounded-lg py-3 font-semibold"
-        >
+      <div style={{ marginTop: 30 }}>
+        <button onClick={() => router.push("/login")}>Login</button>
+        <button onClick={() => router.push("/signup")} style={{ marginLeft: 10 }}>
           Sign Up
-        </button>
-
-        <button
-          onClick={() => router.push("/login")}
-          className="border border-gray-400 hover:bg-white hover:text-black transition rounded-lg py-3 font-semibold"
-        >
-          Login
         </button>
       </div>
     </main>
-  )
+  );
 }
