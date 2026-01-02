@@ -10,19 +10,30 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        router.replace("/dashboard");
+        router.push("/dashboard");
       }
     });
   }, [router]);
 
   return (
-    <main style={{ textAlign: "center", paddingTop: 100 }}>
-      <h1>Geek Collection</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+      <h1 className="text-4xl font-bold text-purple-500 mb-8">
+        Geek Collection
+      </h1>
 
-      <div style={{ marginTop: 30 }}>
-        <button onClick={() => router.push("/login")}>Login</button>
-        <button onClick={() => router.push("/signup")} style={{ marginLeft: 10 }}>
+      <div className="flex gap-4">
+        <button
+          onClick={() => router.push("/signup")}
+          className="px-6 py-3 bg-purple-600 rounded hover:bg-purple-700"
+        >
           Sign Up
+        </button>
+
+        <button
+          onClick={() => router.push("/login")}
+          className="px-6 py-3 border border-purple-500 rounded hover:bg-purple-900"
+        >
+          Login
         </button>
       </div>
     </main>
