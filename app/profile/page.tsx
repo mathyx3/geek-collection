@@ -1,38 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-export default function Perfil() {
-  const [nickname, setNickname] = useState("");
-  const router = useRouter();
-
-  const salvarPerfil = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      nickname
+export default function SignUpPage() {
+  const signup = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${location.origin}/auth/callback?type=signup`,
+      },
     });
-
-    router.replace("/dashboard");
   };
 
   return (
-    <main style={{ padding: 50 }}>
-      <h2>Criar Perfil</h2>
-
-      <input
-        placeholder="Nickname"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-      />
-
-      <button onClick={salvarPerfil} style={{ display: "block", marginTop: 20 }}>
-        Salvar perfil
+    <main className="min-h-screen flex items-center justify-center bg-black text-white">
+      <button
+        onClick={signup}
+        className="px-6 py-3 bg-purple-600 rounded hover:bg-purple-700"
+      >
+        Criar conta com Google
       </button>
     </main>
   );
