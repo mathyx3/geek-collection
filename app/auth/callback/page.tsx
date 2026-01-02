@@ -1,48 +1,33 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-function CallbackInner() {
+export default function AuthCallback() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const exchangeCode = async () => {
-      const code = searchParams.get("code");
-
-      if (!code) {
-        router.replace("/login");
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) {
+        router.replace("/");
         return;
       }
 
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      // verifica se o perfil existe
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", data.session.user.id)
+        .single();
 
-      if (error) {
-        console.error("Erro no callback:", error.message);
-        router.replace("/login");
-        return;
+      if (!profile) {
+        router.replace("/profile");
+      } else {
+        router.replace("/dashboard");
       }
+    });
+  }, [router]);
 
-      // depois do login OAuth, decide pra onde ir
-      router.replace("/dashboard");
-    };
-
-    exchangeCode();
-  }, [router, searchParams]);
-
-  return (
-    <div style={{ color: "white", textAlign: "center", marginTop: 50 }}>
-      Finalizando login...
-    </div>
-  );
-}
-
-export default function CallbackPage() {
-  return (
-    <Suspense fallback={<div style={{ color: "white" }}>Carregando…</div>}>
-      <CallbackInner />
-    </Suspense>
-  );
+  return null;
 }
